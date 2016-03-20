@@ -1,8 +1,7 @@
 from syncer import models, db
 from time import time
 from flask import request
-
-KEY = 'password'
+from config import SYNCER_ADMIN_KEY as KEY
 
 def is_correct_login_format(p):
     if 'userid' in p and 'key' in p:
@@ -31,8 +30,10 @@ def get_conf(p):
     resp['devices'] = []
     for d in devices:
         tmp = {}
+        # tmp['id'] = d.id
+        tmp['id'] = d.id
         tmp['name'] = d.name
-        tmp['number'] = d.number
+        # tmp['number'] = d.number
         tmp['commands'] = d.commands()
         tmp['alerts'] = d.alerts()
         resp['devices'].append(tmp)
@@ -197,6 +198,8 @@ def device(p):
                 u.password = p['password']
             if 'number' in p:
                 u.number = p['number']
+            elif p['action'] == 'add':
+                u.number = p['id']
             if 'protocol' in p:
                 u.protocol = p['protocol']
             if p['action'] == 'add':
