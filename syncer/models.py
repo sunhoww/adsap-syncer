@@ -23,7 +23,7 @@ class User(db.Model):
         return '<User %r %r>' % (self.id, self.name)
 
     def key(self):
-        return unicode(java_string_hashcode(self.id + self.password))
+        return java_string_hashcode(self.id + self.password)
 
     def has_device(self, deviceid):
         d = Device.query.get(deviceid)

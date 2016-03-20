@@ -1,5 +1,5 @@
 from syncer import models, db
-from time import time
+from syncer.helpers import get_epoch
 from flask import request
 from config import SYNCER_ADMIN_KEY as KEY
 
@@ -31,9 +31,8 @@ def get_conf(p):
     for d in devices:
         tmp = {}
         # tmp['id'] = d.id
-        tmp['id'] = d.id
         tmp['name'] = d.name
-        # tmp['number'] = d.number
+        tmp['number'] = d.number
         tmp['commands'] = d.commands()
         tmp['alerts'] = d.alerts()
         resp['devices'].append(tmp)
@@ -108,19 +107,19 @@ def add_record(p):
         tmp = models.Message(id=msg['id'], body=msg['body'])
         tmp.user = user
         tmp.device = models.Device.query.get(msg['deviceid'])
-        tmp.synctime = int(time() * 1000)
+        tmp.synctime = get_epoch()
         if not 'time' in msg:
             tmp.time = tmp.synctime
         else:
-            tmp.time = int(msg['time'])
+            tmp.time = get_epoch(msg['time'])
         if not 'direction' in msg:
             tmp.direction = RCVD
-        elif msg['direction'] == 'sent':
+        elif msg['direction'] == 'S':
             tmp.direction = SENT
-        elif msg['direction'] == 'received':
+        elif msg['direction'] == 'R':
             tmp.direction = RCVD
         else:
-            tmp.direction = RCVD
+            tmp.direction = -1
         try:
             db.session.add(tmp)
             db.session.commit()
