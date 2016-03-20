@@ -40,7 +40,7 @@ def insert(action):
         else:
             return json.jsonify({'error': 'Unrecognized action.'})
     except:
-        return 'Error: Resistance is futile.'
+        return 'Error: I\'m sorry, Dave. I\'m afraid I can\'t do that.'
 
 @app.route('/', methods=['POST', 'GET'])
 def index():
