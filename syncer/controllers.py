@@ -1,5 +1,5 @@
 from syncer import models, db
-from syncer.helpers import get_epoch
+from syncer.helpers import get_epoch, get_stime
 from flask import request
 from config import SYNCER_ADMIN_KEY as KEY
 
@@ -72,9 +72,11 @@ def msg_exists(p):
         return True
     return False
 
+SENT = 1
+RCVD = 0
+
 def add_record(p):
-    SENT = 1
-    RCVD = 0
+
     resp = {
         'success': [],
         'error': []
@@ -234,3 +236,62 @@ def relation(p):
         return {'success': p['deviceid'] + msg + p['userid'] + '!'}
     except:
         return {'error': 'Modifying relationship failed!'}
+
+def get_user_dict(p, show_usr_pass=False, show_dev_pass=False, show_messages=False, show_dev_id_only=False):
+    r = {}
+    if p is None:
+        return r
+    r['id'] = p.id
+    r['name'] = p.name
+    if show_usr_pass:
+        r['password'] = p.password
+    r['devices'] = []
+    for d in p.devices.all():
+        tmp = {}
+        tmp['id'] = d.id
+        if not show_dev_id_only:
+            tmp['name'] = d.name
+            tmp['number'] = d.number
+            if show_dev_pass:
+                tmp['password'] = d.password
+            tmp['protocol'] = d.protocol
+        r['devices'].append(tmp)
+    if show_messages:
+        r['messages'] = []
+        for m in p.messages.all():
+            tmp = {}
+            tmp['id'] = m.id
+            tmp['deviceid'] = m.deviceid
+            tmp['time'] = get_stime(m.time)
+            tmp['body'] = m.body
+            if m.direction == RCVD:
+                tmp['direction'] = 'received'
+            elif m.direction == SENT:
+                tmp['direction'] = 'sent'
+            else:
+                tmp['direction'] = ''
+            tmp['synctime'] = get_stime(m.synctime)
+            r['messages'].append(tmp)
+    r['messageCount'] = len(p.messages.all())
+    return r
+
+def list_users(p):
+    resp = {}
+    show_usr_pass = False
+    show_dev_pass = False
+    show_messages = False
+    show_dev_id_only = False
+    if 'include' in p:
+        show_usr_pass = 'userpassword' in p['include']
+        show_dev_pass = 'devicepassword' in p['include']
+        show_messages = 'messages' in p['include']
+    if 'id' in p:
+        user = models.User.query.get(p['id'])
+        if user is None:
+            return {'error': p['id'] + ' does not exist!'}
+        resp = get_user_dict(user, show_usr_pass, show_dev_pass, show_messages)
+    else:
+        resp['users'] = []
+        for u in models.User.query.all():
+            resp['users'].append(get_user_dict(u, show_usr_pass, show_dev_pass, show_messages, not show_dev_id_only))
+    return resp
