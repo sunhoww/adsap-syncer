@@ -12,7 +12,7 @@ def is_correct_login_format(p):
     return False
 
 def is_correct_message_format(p):
-    if 'id' in p and 'body' in p and 'deviceid' in p:
+    if 'id' in p and 'body' in p and 'number' in p:
         return True
     return False
 
@@ -76,7 +76,6 @@ SENT = 1
 RCVD = 0
 
 def add_record(p):
-
     resp = {
         'success': [],
         'error': []
@@ -95,10 +94,10 @@ def add_record(p):
                     'cause': 'No id found'
                 })
             continue
-        if not user.has_device(msg['deviceid']):
+        if not user.has_number(msg['number']):
             resp['error'].append({
                 'id': msg['id'],
-                'cause': p['userid'] + ' does not have access to ' + msg['deviceid']
+                'cause': p['userid'] + ' does not have access to ' + msg['number']
             })
             continue
         if msg_exists(msg):
@@ -108,7 +107,7 @@ def add_record(p):
             continue
         tmp = models.Message(id=msg['id'], body=msg['body'])
         tmp.user = user
-        tmp.device = models.Device.query.get(msg['deviceid'])
+        tmp.device = user.devices.filter_by(number=msg['number']).first()
         tmp.synctime = get_epoch()
         if not 'time' in msg:
             tmp.time = tmp.synctime

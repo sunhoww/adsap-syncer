@@ -24,7 +24,7 @@ def message():
         return json.jsonify({'error': 'Incorrect format.'})
     if not controllers.is_user(p):
         return json.jsonify({'error': 'Unauthorized access.'})
-        return json.jsonify(controllers.add_record(p))
+    return json.jsonify(controllers.add_record(p))
 
 @app.route('/insert/<what>', methods=['POST'])
 def insert(what):

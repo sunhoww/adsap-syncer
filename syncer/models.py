@@ -31,6 +31,11 @@ class User(db.Model):
             return True
         return False
 
+    def has_number(self, num):
+        if Device.query.filter_by(number=num).first() in self.devices:
+            return True
+        return False
+
 class Device(db.Model):
     id = db.Column(db.String(128), primary_key=True)
     name = db.Column(db.String(128), index=True)
