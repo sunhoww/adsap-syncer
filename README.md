@@ -8,4 +8,4 @@ uses http://blog.miguelgrinberg.com/post/flask-migrate-alembic-database-migratio
 2. put db variables and admin key in `config.py`
 3. run `runsync.py`
 
-use 'repop.py' to import some sample users and devices.
+use `repop.py` to import some sample users and devices.
