@@ -37,6 +37,12 @@ class User(db.Model):
             return True
         return False
 
+    def get(self):
+        return {
+            'id': self.id,
+            'name': self.name
+        }
+
 class Device(db.Model):
     id = db.Column(db.String(128), primary_key=True)
     name = db.Column(db.String(128), index=True)
@@ -52,6 +58,14 @@ class Device(db.Model):
 
     def __repr__(self):
         return '<Device %r - %r>' % (self.id, self.name)
+
+    def get(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'number': self.number,
+            'protocol': self.protocol
+        }
 
     def commands(self):
         r = {}

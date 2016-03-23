@@ -136,13 +136,6 @@ def add_record(p):
         del resp['error']
     return resp
 
-def authenticate(p):
-    if 'key' not in p:
-        return False
-    if p['key'] != KEY:
-        return False
-    return True
-
 def user(p):
     if 'id' not in p or 'action' not in p:
         return {'error': 'Unacceptable format!'}
@@ -236,61 +229,40 @@ def relation(p):
     except:
         return {'error': 'Modifying relationship failed!'}
 
-def get_user_dict(p, show_usr_pass=False, show_dev_pass=False, show_messages=False, show_dev_id_only=False):
-    r = {}
-    if p is None:
-        return r
-    r['id'] = p.id
-    r['name'] = p.name
-    if show_usr_pass:
-        r['password'] = p.password
-    r['devices'] = []
-    for d in p.devices.all():
-        tmp = {}
-        tmp['id'] = d.id
-        if not show_dev_id_only:
-            tmp['name'] = d.name
-            tmp['number'] = d.number
-            if show_dev_pass:
-                tmp['password'] = d.password
-            tmp['protocol'] = d.protocol
-        r['devices'].append(tmp)
-    if show_messages:
-        r['messages'] = []
-        for m in p.messages.all():
-            tmp = {}
-            tmp['id'] = m.id
-            tmp['deviceid'] = m.deviceid
-            tmp['time'] = get_stime(m.time)
-            tmp['body'] = m.body
-            if m.direction == RCVD:
-                tmp['direction'] = 'received'
-            elif m.direction == SENT:
-                tmp['direction'] = 'sent'
-            else:
-                tmp['direction'] = ''
-            tmp['synctime'] = get_stime(m.synctime)
-            r['messages'].append(tmp)
-    r['messageCount'] = len(p.messages.all())
-    return r
+def list_users():
+    users = []
+    for u in models.User.query.all():
+        tmp = u.get()
+        tmp['devcount'] = len(u.devices.all())
+        users.append(tmp)
+    return {'users': users}
 
-def list_users(p):
-    resp = {}
-    show_usr_pass = False
-    show_dev_pass = False
-    show_messages = False
-    show_dev_id_only = False
-    if 'include' in p:
-        show_usr_pass = 'userpassword' in p['include']
-        show_dev_pass = 'devicepassword' in p['include']
-        show_messages = 'messages' in p['include']
-    if 'id' in p:
-        user = models.User.query.get(p['id'])
-        if user is None:
-            return {'error': p['id'] + ' does not exist!'}
-        resp = get_user_dict(user, show_usr_pass, show_dev_pass, show_messages)
-    else:
-        resp['users'] = []
-        for u in models.User.query.all():
-            resp['users'].append(get_user_dict(u, show_usr_pass, show_dev_pass, show_messages, not show_dev_id_only))
-    return resp
+def list_user(uid):
+    u = models.User.query.get(uid)
+    if u is None:
+        return {'error': uid + ' does not exist!'}
+    user = u.get()
+    user['devices'] = []
+    for d in u.devices.all():
+        user['devices'].append(d.get())
+    user['messagecount'] = len(u.messages.all())
+    return user
+
+def list_devices():
+    devices = []
+    for d in models.Device.query.all():
+        tmp = d.get()
+        tmp['devcount'] = len(d.users.all())
+        devices.append(tmp)
+    return {'devices': devices}
+
+def list_device(did):
+    d = models.Device.query.get(did)
+    if d is None:
+        return {'error': uid + ' does not exist!'}
+    device = d.get()
+    device['users'] = []
+    for u in d.users.all():
+        device['users'].append(u.get())
+    device['messagecount'] = len(d.messages.all())
+    return device
