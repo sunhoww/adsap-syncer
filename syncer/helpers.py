@@ -1,5 +1,7 @@
 import time
 
+VALIDITY = 1800
+
 def get_epoch(s=None):
     if s is None:
         return int(time.time())
@@ -21,3 +23,6 @@ def java_string_hashcode(s):
     for c in s:
         h = (31 * h + ord(c)) & 0xFFFFFFFF
     return ((h + 0x80000000) & 0xFFFFFFFF) - 0x80000000
+
+def stamp():
+    return ''

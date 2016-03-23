@@ -32,7 +32,8 @@ class User(db.Model):
         return False
 
     def has_number(self, num):
-        if Device.query.filter_by(number=num).first() in self.devices:
+        d = Device.query.filter_by(number=num).first()
+        if d in self.devices:
             return True
         return False
 
@@ -90,7 +91,7 @@ class Message(db.Model):
     userid = db.Column(db.String(128), db.ForeignKey('user.id'))
     deviceid = db.Column(db.String(128), db.ForeignKey('device.id'))
     time = db.Column(db.Integer)
-    body = db.Column(db.String(140))
+    body = db.Column(db.String(160))
     direction = db.Column(db.Integer)
     synctime = db.Column(db.Integer)
 

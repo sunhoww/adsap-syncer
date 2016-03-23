@@ -1,4 +1,4 @@
-from syncer import app
+from syncer import manager
 
 if __name__ == '__main__':
-    app.run()
+    manager.run()

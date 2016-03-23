@@ -1,4 +1,4 @@
-from syncer import app, controllers, models
+from syncer import app, controllers, models, helpers
 from flask import request, json
 from werkzeug.exceptions import BadRequest
 
@@ -62,7 +62,7 @@ def list(what):
 
 @app.route('/', methods=['POST', 'GET'])
 def index():
-    return 'v1.0 20160311'
+    return 'v1.0 20160311\n' + helpers.stamp()
 
 @app.route('/test', methods=['POST'])
 def test():
