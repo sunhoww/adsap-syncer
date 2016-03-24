@@ -1,6 +1,10 @@
+from flask import request, json, url_for
+from werkzeug.exceptions import BadRequest
+
 from syncer import models, db
-from syncer.helpers import get_epoch, get_stime
-from flask import request
+from syncer.helpers import get_epoch, get_stime, \
+    bad_request, not_found, missing_parameters, already_exists, \
+    success_insert, success_update, success_remove
 from config import SYNCER_ADMIN_KEY as KEY
 
 def is_correct_login_format(p):
@@ -136,133 +140,80 @@ def add_record(p):
         del resp['error']
     return resp
 
-def user(p):
-    if 'id' not in p or 'action' not in p:
-        return {'error': 'Unacceptable format!'}
-    u = models.User.query.get(p['id'])
-    if p['action'] == 'update' or p['action'] == 'delete':
-        if u is None:
-            return {'error': p['id'] + ' not found!'}
-        msg = ' ' + p['action'] +'d!'
-    elif p['action'] == 'add':
-        if not u is None:
-            return {'error': p['id'] + ' exists. Impossible to overwrite!'}
-        u = models.User(id=p['id'])
-        msg = ' added!'
+# admin
+
+def list_items(id):
+    resp = {}
+    if id is None:
+        if request.path == '/users':
+            resp['users'] = []
+            for r in models.User.query.all():
+                resp['users'].append(r.get(count_links=True))
+        elif request.path == '/devices':
+            resp['devices'] = []
+            for r in models.Device.query.all():
+                resp['devices'].append(r.get(count_links=True))
     else:
-        return {'error': 'Unknown action!'}
+        r = None
+        if request.path == '/users/' + id:
+            r = models.User.query.get(id)
+        elif request.path == '/devices/' + id:
+            r = models.Device.query.get(id)
+        if r is None:
+            return not_found(id)
+        resp = r.get(with_links=True, count_messages=True)
+    return json.jsonify(resp)
+
+def insert_item():
     try:
-        if p['action'] == 'delete':
-            db.session.delete(u)
-        else:
-            if 'name' in p:
-                u.name = p['name']
-            if 'password' in p:
-                u.password = p['password']
-            if p['action'] == 'add':
-                db.session.add(u)
-        db.session.commit()
-        return {'success': u.id + msg}
-    except:
-        return {'error': 'Insertion failed!'}
+        p = request.get_json()
+    except BadRequest:
+        return bad_request()
+    if 'id' not in p:
+        return missing_parameters()
+    r = None
+    if request.path == '/users':
+        if not models.User.query.get(p['id']) is None:
+            return already_exists(p['id'])
+        r = models.User(p['id'])
+    elif request.path == '/devices':
+        if not models.Device.query.get(p['id']) is None:
+            return already_exists(p['id'])
+        r = models.Device(p['id'])
+    r.put(p)
+    db.session.add(r)
+    db.session.commit()
+    return success_insert(p['id'])
 
-def device(p):
-    if 'id' not in p or 'action' not in p:
-        return {'error': 'Unacceptable format!'}
-    u = models.Device.query.get(p['id'])
-    if p['action'] == 'update' or p['action'] == 'delete':
-        if u is None:
-            return {'error': p['id'] + ' not found!'}
-        msg = ' ' + p['action'] +'d!'
-    elif p['action'] == 'add':
-        if not u is None:
-            return {'error': p['id'] + ' exists. Impossible to overwrite!'}
-        u = models.Device(id=p['id'])
-        msg = ' added!'
-    else:
-        return {'error': 'Unknown action!'}
+def update_item(id):
     try:
-        if p['action'] == 'delete':
-            db.session.delete(u)
-        else:
-            if 'name' in p:
-                u.name = p['name']
-            if 'password' in p:
-                u.password = p['password']
-            if 'number' in p:
-                u.number = p['number']
-            elif p['action'] == 'add':
-                u.number = p['id']
-            if 'protocol' in p:
-                u.protocol = p['protocol']
-            if p['action'] == 'add':
-                db.session.add(u)
-        db.session.commit()
-        return {'success': u.id + msg}
-    except:
-        return {'error': 'Insertion failed!'}
+        p = request.get_json()
+    except BadRequest:
+        return bad_request()
+    r = None
+    if request.path == '/users/' + id:
+        r = models.User.query.get(id)
+    elif request.path == '/devices/' + id:
+        r = models.Device.query.get(id)
+    if r is None:
+        return not_found(id)
+    r.put(p)
+    if 'link' in p:
+        r.link(p['link'])
+    if 'unlink' in p:
+        r.unlink(p['unlink'])
+    db.session.add(r)
+    db.session.commit()
+    return success_update(id)
 
-def relation(p):
-    if 'userid' not in p or 'deviceid' not in p:
-        return {'error': 'Unacceptable format!'}
-    u = models.User.query.get(p['userid'])
-    d = models.Device.query.get(p['deviceid'])
-    if u is None:
-        return {'error': p['userid'] + ' does not exist!'}
-    if d is None:
-        return {'error': p['deviceid'] + ' does not exist!'}
-    if p['action'] == 'add':
-        if d in u.devices.all():
-            return {'error': 'Possible duplicate relation found!'}
-        u.devices.append(d)
-        msg = ' added to '
-    elif p['action'] == 'delete':
-        if d not in u.devices.all():
-            return {'error': 'No relation found!'}
-        u.devices.remove(d)
-        msg = ' deleted from '
-    else:
-        return {'error': 'Unknown action!'}
-    try:
-        db.session.commit()
-        return {'success': p['deviceid'] + msg + p['userid'] + '!'}
-    except:
-        return {'error': 'Modifying relationship failed!'}
-
-def list_users():
-    users = []
-    for u in models.User.query.all():
-        tmp = u.get()
-        tmp['devcount'] = len(u.devices.all())
-        users.append(tmp)
-    return {'users': users}
-
-def list_user(uid):
-    u = models.User.query.get(uid)
-    if u is None:
-        return {'error': uid + ' does not exist!'}
-    user = u.get()
-    user['devices'] = []
-    for d in u.devices.all():
-        user['devices'].append(d.get())
-    user['messagecount'] = len(u.messages.all())
-    return user
-
-def list_devices():
-    devices = []
-    for d in models.Device.query.all():
-        tmp = d.get()
-        tmp['devcount'] = len(d.users.all())
-        devices.append(tmp)
-    return {'devices': devices}
-
-def list_device(did):
-    d = models.Device.query.get(did)
-    if d is None:
-        return {'error': uid + ' does not exist!'}
-    device = d.get()
-    device['users'] = []
-    for u in d.users.all():
-        device['users'].append(u.get())
-    device['messagecount'] = len(d.messages.all())
-    return device
+def remove_item(id):
+    r = None
+    if request.path == '/users/' + id:
+        r = models.User.query.get(id)
+    elif request.path == '/devices/' + id:
+        r = models.Device.query.get(id)
+    if r is None:
+        return not_found(id)
+    db.session.delete(r)
+    db.session.commit()
+    return success_remove(id)

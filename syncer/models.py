@@ -37,11 +37,38 @@ class User(db.Model):
             return True
         return False
 
-    def get(self):
-        return {
-            'id': self.id,
-            'name': self.name
-        }
+    def get(self, with_password=False, with_links=False, count_links=False, count_messages=False):
+        r = {}
+        r['id'] = self.id
+        r['name'] = self.name
+        if with_password:
+            r['password'] = seld.password
+        if with_links:
+            r['devices'] = []
+            for d in self.devices.all():
+                r['devices'].append(d.get())
+        if count_links:
+            r['devicecount'] = len(self.devices.all())
+        if count_messages:
+            r['messagecount'] = len(self.messages.all())
+        return r
+
+    def put(self, p):
+        if 'name' in p:
+            self.name = p['name']
+        if 'password' in p:
+            self.password = p['password']
+
+    def link(self, darr):
+        for d in darr:
+            i = Device.query.get(d)
+            if not i is None and not self.has_device(d):
+                self.devices.append(i)
+
+    def unlink(self, darr):
+        for d in darr:
+            if self.has_device(d):
+                self.devices.remove(i)
 
 class Device(db.Model):
     id = db.Column(db.String(128), primary_key=True)
@@ -59,13 +86,45 @@ class Device(db.Model):
     def __repr__(self):
         return '<Device %r - %r>' % (self.id, self.name)
 
-    def get(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'number': self.number,
-            'protocol': self.protocol
-        }
+    def get(self, with_password=False, with_links=False, count_links=False, count_messages=False):
+        r = {}
+        r['id'] = self.id
+        r['name'] = self.name
+        r['number'] = self.number
+        r['protocol'] = self.protocol
+        if with_password:
+            r['password'] = seld.password
+        if with_links:
+            r['users'] = []
+            for d in self.users.all():
+                r['users'].append(d.get())
+        if count_links:
+            r['usercount'] = len(self.users.all())
+        if count_messages:
+            r['messagecount'] = len(self.messages.all())
+        return r
+
+    def put(self, p):
+        if 'name' in p:
+            self.name = p['name']
+        if 'password' in p:
+            self.password = p['password']
+        if 'number' in p:
+            self.number = p['number']
+        if 'name' in p:
+            self.protocol = p['protocol']
+
+        def link(self, darr):
+            for d in darr:
+                i = User.query.get(d)
+                if not i is None:
+                    self.devices.append(i)
+
+        def unlink(self, darr):
+            for d in darr:
+                i = User.query.get(d)
+                if not i is None:
+                    self.devices.remove(i)
 
     def commands(self):
         r = {}
