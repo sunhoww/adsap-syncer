@@ -1,7 +1,38 @@
 from syncer import app, controllers, helpers
-from flask import request, json, Response
+from flask import request, json, Response, render_template
 from functools import wraps
 from werkzeug.exceptions import BadRequest
+from config import app_logfile
+from time import asctime
+
+@app.before_request
+def before_request():
+    f = open(app_logfile, 'a')
+    line = """
+        <div>
+            <h3 style=\"background-color:lightgreen; padding:5px;\">
+                """ + asctime() + ' ' + """<span style=\"font-size:.8em; font-weight:normal;\">""" + request.method + ' ' + request.path + ' ' + request.remote_addr + """</span>
+            </h3>
+            <pre style=\"background-color:lightgray; margin:20px; padding:5px;\">""" + str(request.headers) + """</pre>
+            <pre style=\"background-color:lightgray; margin:20px; padding:5px;\">""" + request.data + """</pre>
+        </div>"""
+    f.write(line)
+    f.close()
+
+@app.after_request
+def after_request(r):
+    f = open(app_logfile, 'a')
+    line = """
+        <div>
+            <h3 style=\"background-color:lightblue; padding:5px;\">
+                """ + asctime() + ' ' + """<span style=\"font-size:.8em; font-weight:normal;\">""" + str(r.status_code) + """</span>
+            </h3>
+            <pre style=\"background-color:lightgray; margin:20px; padding:5px;\">""" + str(r.headers) + """</pre>
+            <pre style=\"background-color:lightgray; margin:20px; padding:5px;\">""" + r.data + """</pre>
+        </div>"""
+    f.write(line)
+    f.close()
+    return r
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -74,7 +105,6 @@ def users(uid=None):
         return controllers.update_item(uid)
     if request.method == 'DELETE':
         return controllers.remove_item(uid)
-
 
 @app.route('/devices', methods=['GET', 'POST'])
 @app.route('/devices/<did>', methods=['GET', 'PUT', 'DELETE'])

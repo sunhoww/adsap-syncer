@@ -5,7 +5,7 @@ from syncer import models, db
 from syncer.helpers import get_epoch, get_stime, \
     bad_request, not_found, missing_parameters, already_exists, \
     success_insert, success_update, success_remove
-from config import SYNCER_ADMIN_KEY as KEY
+from config import syncer_admin_key as KEY
 
 def is_correct_login_format(p):
     if 'userid' in p and 'key' in p:
