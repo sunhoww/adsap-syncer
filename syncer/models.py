@@ -53,6 +53,19 @@ class User(db.Model):
             r['messagecount'] = len(self.messages.all())
         return r
 
+    def get_msgs(self):
+        r = []
+        for m in self.messages.all():
+                tmp = {}
+                tmp['id'] = m.id
+                tmp['deviceid'] = m.device.id
+                tmp['time'] = m.time
+                tmp['body'] = m.body
+                tmp['direction'] = m.direction
+                tmp['synctime'] = m.synctime
+                r.append(tmp)
+        return r
+
     def put(self, p):
         if 'name' in p:
             self.name = p['name']
@@ -102,6 +115,18 @@ class Device(db.Model):
             r['usercount'] = len(self.users.all())
         if count_messages:
             r['messagecount'] = len(self.messages.all())
+        return r
+    def get_msgs(self):
+        r = []
+        for m in self.messages.all():
+                tmp = {}
+                tmp['id'] = m.id
+                tmp['deviceid'] = m.user.id
+                tmp['time'] = m.time
+                tmp['body'] = m.body
+                tmp['direction'] = m.direction
+                tmp['synctime'] = m.synctime
+                r.append(tmp)
         return r
 
     def put(self, p):

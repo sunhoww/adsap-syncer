@@ -193,14 +193,9 @@ def remove_item(id):
     return success_remove(id)
 
 def get_messages(id):
-    msg = []
     r = models.User.query.get(id)
     if r is None:
         r = models.Device.query.get(id)
         if r is None:
             return not_found(id)
-        msg = r.messages.all()
-    else:
-        msg = r.messages.all()
-    print msg
-    return json.jsonify({'messages': msg})
+    return json.jsonify({'messages': r.get_msgs()})
