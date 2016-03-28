@@ -18,6 +18,7 @@ endpoint | usage
 */users/:id* | *GET* one, *PUT* to update, *DELETE* one
 */devices* | *GET* all, *POST* new
 */devices/:id* | *GET* one, *PUT* to update, *DELETE* one
+*/messages/:id* | *GET* for user or device
 
 ## attributions
 

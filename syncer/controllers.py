@@ -42,35 +42,6 @@ def get_conf(p):
         resp['devices'].append(tmp)
     return resp
 
-def get_conf_alt(p):
-    user = models.User.query.get(p['userid'])
-    devices = models.Device.query.filter_by(user=user).all()
-    resp = {}
-    resp['name'] = user.name
-    resp['devices'] = []
-    resp['commands'] = []
-    resp['alerts'] = []
-    for d in devices:
-        tmp = {}
-        tmp['id'] = d.id
-        tmp['name'] = d.name
-        tmp['number'] = d.number
-        resp['devices'].append(tmp)
-        for c in d.commands():
-            tmp = {}
-            tmp['commandname'] = c
-            tmp['deviceid'] = d.id
-            tmp['string'] = d.commands()[c]
-            resp['commands'].append(tmp)
-        for c in d.alerts():
-            tmp = {}
-            tmp['alertname'] = c
-            tmp['deviceid'] = d.id
-            tmp['string'] = d.alerts()[c]
-            resp['alerts'].append(tmp)
-    resp['status'] = 'OK'
-    return conf
-
 def msg_exists(p):
     if not models.Message.query.get(p['id']) is None:
         return True
@@ -78,6 +49,7 @@ def msg_exists(p):
 
 SENT = 1
 RCVD = 0
+SENA = 2
 
 def add_record(p):
     resp = {
@@ -121,6 +93,8 @@ def add_record(p):
             tmp.direction = RCVD
         elif msg['direction'] == 'S':
             tmp.direction = SENT
+        elif msg['direction'] == 'SA':
+            tmp.direction = SENA
         elif msg['direction'] == 'R':
             tmp.direction = RCVD
         else:
@@ -217,3 +191,16 @@ def remove_item(id):
     db.session.delete(r)
     db.session.commit()
     return success_remove(id)
+
+def get_messages(id):
+    msg = []
+    r = models.User.query.get(id)
+    if r is None:
+        r = models.Device.query.get(id)
+        if r is None:
+            return not_found(id)
+        msg = r.messages.all()
+    else:
+        msg = r.messages.all()
+    print msg
+    return json.jsonify({'messages': msg})

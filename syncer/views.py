@@ -11,7 +11,7 @@ def before_request():
     line = """
         <div>
             <h3 style=\"background-color:lightgreen; padding:5px;\">
-                """ + asctime() + ' ' + """<span style=\"font-size:.8em; font-weight:normal;\">""" + request.method + ' ' + request.path + ' ' + request.remote_addr + """</span>
+                """ + asctime() + ' ' + """<span style=\"font-weight:normal;\">""" + request.method + ' ' + request.path + ' ' + request.remote_addr + """</span>
             </h3>
             <pre style=\"background-color:lightgray; margin:20px; padding:5px;\">""" + str(request.headers) + """</pre>
             <pre style=\"background-color:lightgray; margin:20px; padding:5px;\">""" + request.data + """</pre>
@@ -25,7 +25,7 @@ def after_request(r):
     line = """
         <div>
             <h3 style=\"background-color:lightblue; padding:5px;\">
-                """ + asctime() + ' ' + """<span style=\"font-size:.8em; font-weight:normal;\">""" + str(r.status_code) + """</span>
+                """ + asctime() + ' ' + """<span style=\"font-weight:normal;\">""" + str(r.status_code) + """</span>
             </h3>
             <pre style=\"background-color:lightgray; margin:20px; padding:5px;\">""" + str(r.headers) + """</pre>
             <pre style=\"background-color:lightgray; margin:20px; padding:5px;\">""" + r.data + """</pre>
@@ -37,7 +37,7 @@ def after_request(r):
 @app.route('/login', methods=['POST'])
 def login():
     try:
-        p = request.get_json(force=True)
+        p = request.get_json()
     except BadRequest:
         return helpers.bad_request()
     if not controllers.is_correct_login_format(p):
@@ -93,6 +93,13 @@ def requires_auth(f):
         return f(*args, **kwargs)
     return decorated
 
+@app.errorhandler(405)
+def method_not_allowed(e):
+    js = json.dumps({'error': 'I\'m sorry, Dave. I\'m afraid I can\'t do that.'})
+    resp = Response(js, status=405, mimetype='application/json')
+    resp.headers['Allow'] = ", ".join(e.valid_methods)
+    return resp
+
 @app.route('/users', methods=['GET', 'POST'])
 @app.route('/users/<uid>', methods=['GET', 'PUT', 'DELETE'])
 @requires_auth
@@ -118,3 +125,8 @@ def devices(did=None):
         return controllers.update_item(did)
     if request.method == 'DELETE':
         return controllers.remove_item(did)
+
+@app.route('/messages/<id>', methods=['GET'])
+@requires_auth
+def messages(id):
+    return controllers.get_messages(id)
