@@ -37,8 +37,9 @@ def get_conf(p):
         # tmp['id'] = d.id
         tmp['name'] = d.name
         tmp['number'] = d.number
-        tmp['commands'] = d.commands()
-        tmp['alerts'] = d.alerts()
+        if not d.password is None:
+            tmp['commands'] = d.commands()
+            tmp['alerts'] = d.alerts()
         resp['devices'].append(tmp)
     return resp
 

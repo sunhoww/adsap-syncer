@@ -121,7 +121,7 @@ class Device(db.Model):
         for m in self.messages.all():
                 tmp = {}
                 tmp['id'] = m.id
-                tmp['deviceid'] = m.user.id
+                tmp['userid'] = m.user.id
                 tmp['time'] = m.time
                 tmp['body'] = m.body
                 tmp['direction'] = m.direction
