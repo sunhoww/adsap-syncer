@@ -28,6 +28,7 @@ def is_user(p):
 
 def get_conf(p):
     user = models.User.query.get(p['userid'])
+    user.last_synctime = get_epoch()
     devices = user.devices
     resp = {}
     resp['name'] = user.name
@@ -39,6 +40,7 @@ def get_conf(p):
         tmp['commands'] = d.commands()
         tmp['alerts'] = d.alerts()
         resp['devices'].append(tmp)
+    db.session.commit()
     return resp
 
 def msg_exists(p):
@@ -48,7 +50,8 @@ def msg_exists(p):
 
 SENT = 1
 RCVD = 0
-SENA = 2
+AUTO = 2
+CALL = 3
 
 def add_record(p):
     resp = {
@@ -56,6 +59,7 @@ def add_record(p):
         'error': []
     }
     user = models.User.query.get(p['userid'])
+    user.last_synctime = get_epoch()
     for msg in p['messages']:
         if not is_correct_message_format(msg):
             if 'id' in msg:
@@ -82,33 +86,36 @@ def add_record(p):
             continue
         tmp = models.Message(id=msg['id'], body=msg['body'])
         tmp.user = user
-        tmp.device = user.devices.filter_by(number=msg['number']).first()
-        tmp.synctime = get_epoch()
+        device = user.devices.filter_by(number=msg['number']).first()
+        device.last_synctime = get_epoch()
+        tmp.device = device
         if not 'time' in msg:
             tmp.time = tmp.synctime
         else:
             tmp.time = get_epoch(msg['time'])
         if not 'direction' in msg:
-            tmp.direction = RCVD
+            tmp.direction = -1
         elif msg['direction'] == 'S':
             tmp.direction = SENT
-        elif msg['direction'] == 'SA':
-            tmp.direction = SENA
+        elif msg['direction'] == 'A':
+            tmp.direction = AUTO
         elif msg['direction'] == 'R':
             tmp.direction = RCVD
+        elif msg['direction'] == 'C':
+            tmp.direction = CALL
         else:
             tmp.direction = -1
-        try:
-            db.session.add(tmp)
-            db.session.commit()
-            resp['success'].append({
-                'id': msg['id']
-            })
-        except:
-            resp['error'].append({
-                'id': msg['id'],
-                'cause': 'Fault with database insertion'
-            })
+        db.session.add(tmp)
+        resp['success'].append({
+            'id': msg['id']
+        })
+    try:
+        db.session.commit()
+    except:
+        resp['error'].append({
+            'id': msg['id'],
+            'cause': 'Fault with database insertion'
+        })
     if len(resp['error']) == 0:
         del resp['error']
     return resp

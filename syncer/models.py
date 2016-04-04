@@ -1,7 +1,7 @@
 from syncer import db
-from syncer.helpers import java_string_hashcode
+from syncer.helpers import java_string_hashcode, get_epoch, get_stime
 
-protocols = ['gpsq103', 'gt02']
+LT = 19800
 
 assoc = db.Table('assoc',
     db.Column('userid', db.String(128), db.ForeignKey('user.id')),
@@ -12,12 +12,16 @@ class User(db.Model):
     id = db.Column(db.String(128), primary_key=True)
     name = db.Column(db.String(128), index=True)
     password = db.Column(db.String(32))
+    last_synctime = db.Column(db.Integer)
     devices = db.relationship('Device', secondary=assoc,
         back_populates='users', lazy='dynamic')
     messages = db.relationship('Message', backref='user', lazy='dynamic')
 
     def __init__(self, id):
         self.id = id
+        self.name = ''
+        self.password = ''
+        self.last_synctime = -1
 
     def __repr__(self):
         return '<User %r %r>' % (self.id, self.name)
@@ -41,6 +45,7 @@ class User(db.Model):
         r = {}
         r['id'] = self.id
         r['name'] = self.name
+        r['lastconnected'] = get_stime(self.last_synctime, LT)
         if with_password:
             r['password'] = seld.password
         if with_links:
@@ -90,13 +95,17 @@ class Device(db.Model):
     password = db.Column(db.String(16))
     number = db.Column(db.String(16), index=True, unique=True)
     protocol = db.Column(db.String(16))
+    last_synctime = db.Column(db.Integer)
     users = db.relationship('User', secondary=assoc,
         back_populates='devices', lazy='dynamic')
     messages = db.relationship('Message', backref='device', lazy='dynamic')
 
     def __init__(self, id):
         self.id = id
+        self.name = ''
         self.password = ''
+        self.protocol = ''
+        self.last_synctime = -1
 
     def __repr__(self):
         return '<Device %r - %r>' % (self.id, self.name)
@@ -107,6 +116,7 @@ class Device(db.Model):
         r['name'] = self.name
         r['number'] = self.number
         r['protocol'] = self.protocol
+        r['lastconnected'] = get_stime(self.last_synctime, LT)
         if with_password:
             r['password'] = seld.password
         if with_links:
@@ -125,10 +135,10 @@ class Device(db.Model):
                 tmp = {}
                 tmp['id'] = m.id
                 tmp['userid'] = m.user.id
-                tmp['time'] = m.time
+                tmp['time'] = get_stime(m.time)
                 tmp['body'] = m.body
                 tmp['direction'] = m.direction
-                tmp['synctime'] = m.synctime
+                tmp['synctime'] = get_stime(m.synctime)
                 r.append(tmp)
         return r
 
@@ -199,6 +209,7 @@ class Message(db.Model):
     def __init__(self, id, body):
         self.id = id
         self.body = body
+        self.synctime = get_epoch()
 
     def __repr__(self):
         return '<Message %r - %r>' % (self.synctime, self.body)

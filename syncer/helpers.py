@@ -13,10 +13,10 @@ def get_epoch(s=None):
     except ValueError:
         return -1
 
-def get_stime(s=None):
+def get_stime(s=None, lt=0):
     if s < 0:
-        return time.asctime()
-    return time.asctime(time.gmtime(s))
+        return 'undefined'
+    return time.asctime(time.gmtime(s + lt))
 
 # http://garage.pimentech.net/libcommonPython_src_python_libcommon_javastringhashcode/
 def java_string_hashcode(s):
