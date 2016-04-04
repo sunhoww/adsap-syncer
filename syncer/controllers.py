@@ -34,12 +34,10 @@ def get_conf(p):
     resp['devices'] = []
     for d in devices:
         tmp = {}
-        # tmp['id'] = d.id
         tmp['name'] = d.name
         tmp['number'] = d.number
-        if not d.password is None:
-            tmp['commands'] = d.commands()
-            tmp['alerts'] = d.alerts()
+        tmp['commands'] = d.commands()
+        tmp['alerts'] = d.alerts()
         resp['devices'].append(tmp)
     return resp
 

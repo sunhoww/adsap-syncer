@@ -80,6 +80,7 @@ class User(db.Model):
 
     def unlink(self, darr):
         for d in darr:
+            i = Device.query.get(d)
             if self.has_device(d):
                 self.devices.remove(i)
 
@@ -95,6 +96,7 @@ class Device(db.Model):
 
     def __init__(self, id):
         self.id = id
+        self.password = ''
 
     def __repr__(self):
         return '<Device %r - %r>' % (self.id, self.name)
@@ -116,6 +118,7 @@ class Device(db.Model):
         if count_messages:
             r['messagecount'] = len(self.messages.all())
         return r
+
     def get_msgs(self):
         r = []
         for m in self.messages.all():
@@ -139,17 +142,17 @@ class Device(db.Model):
         if 'name' in p:
             self.protocol = p['protocol']
 
-        def link(self, darr):
-            for d in darr:
-                i = User.query.get(d)
-                if not i is None:
-                    self.devices.append(i)
+    def link(self, darr):
+        for d in darr:
+            i = User.query.get(d)
+            if not i is None and not i.has_device(self):
+                self.devices.append(i)
 
-        def unlink(self, darr):
-            for d in darr:
-                i = User.query.get(d)
-                if not i is None:
-                    self.devices.remove(i)
+    def unlink(self, darr):
+        for d in darr:
+            i = User.query.get(d)
+            if not i is None:
+                self.devices.remove(i)
 
     def commands(self):
         r = {}
