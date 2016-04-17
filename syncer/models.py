@@ -155,14 +155,14 @@ class Device(db.Model):
     def link(self, darr):
         for d in darr:
             i = User.query.get(d)
-            if not i is None and not i.has_device(self):
-                self.devices.append(i)
+            if not i is None and not i.has_device(self.id):
+                self.users.append(i)
 
     def unlink(self, darr):
         for d in darr:
             i = User.query.get(d)
-            if not i is None:
-                self.devices.remove(i)
+            if i.has_device(self.id):
+                self.users.remove(i)
 
     def commands(self):
         r = {}

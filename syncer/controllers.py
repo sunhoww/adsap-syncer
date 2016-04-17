@@ -182,7 +182,6 @@ def update_item(id):
         r.link(p['link'])
     if 'unlink' in p:
         r.unlink(p['unlink'])
-    db.session.add(r)
     db.session.commit()
     return success_update(id)
 
