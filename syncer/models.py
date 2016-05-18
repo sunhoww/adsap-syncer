@@ -174,8 +174,8 @@ class Device(db.Model):
             r['monitor'] = 'monitor' + self.password
             r['track'] = 'tracker' + self.password
         if self.protocol == 'gt06':
-            r['stop'] = '#stopelec#' + self.password + '#'
-            r['resume'] = '#supplyelec#' + self.password + '#'
+            r['stop'] = '#stopoil#' + self.password + '#'
+            r['resume'] = '#supplyoil#' + self.password + '#'
             r['arm'] = '#ACC#ON#'
             r['disarm'] = '#ACC#OFF#'
             r['monitor'] = '#monitor#' + self.password + '#'
